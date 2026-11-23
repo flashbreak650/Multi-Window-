@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Left split window pane -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,32C28,29.79 29.79,28 32,28H49C50.1,28 51,28.9 51,30V78C51,79.1 50.1,80 49,80H32C29.79,80 28,78.21 28,76V32Z" />
+    <!-- Right split window pane -->
+    <path
+        android:fillColor="#E0E7FF"
+        android:pathData="M57,30C57,28.9 57.9,28 59,28H76C78.21,28 80,29.79 80,32V76C80,78.21 78.21,80 76,80H59C57.9,80 57,79.1 57,78V30Z" />
+    <!-- Divider handle indicator -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M53,46C53,45.45 53.45,45 54,45C54.55,45 55,45.45 55,46V62C55,62.55 54.55,63 54,63C53.45,63 53,62.55 53,62V46Z" />
+</vector>
