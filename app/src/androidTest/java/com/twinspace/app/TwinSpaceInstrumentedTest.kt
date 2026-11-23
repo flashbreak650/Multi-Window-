@@ -2,6 +2,8 @@ package com.twinspace.app
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,7 +18,7 @@ class TwinSpaceInstrumentedTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun dashboard_displaysCoreControlsAndNavigatesToAllApps() {
+    fun firstAndSecondAppCards_openAppPickerAndReturnToDashboard() {
         // Dismiss first-launch privacy disclosure if displayed
         try {
             composeRule.onNodeWithText("Continue").performClick()
@@ -25,10 +27,18 @@ class TwinSpaceInstrumentedTest {
         }
 
         composeRule.onNodeWithText("TwinSpace").assertIsDisplayed()
-        composeRule.onNodeWithText("First App").assertIsDisplayed()
-        composeRule.onNodeWithText("Second App").assertIsDisplayed()
-        composeRule.onNodeWithText("OPEN BOTH").assertIsDisplayed()
 
+        // Tap First App card -> must open Select First App screen
+        composeRule.onNodeWithTag("first_app_card").performClick()
+        composeRule.onNodeWithText("Select First App").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+
+        // Tap Second App card -> must open Select Second App screen
+        composeRule.onNodeWithTag("second_app_card").performClick()
+        composeRule.onNodeWithText("Select Second App").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+
+        // Tap All Apps tile -> must open All Installed Apps screen
         composeRule.onNodeWithText("All Apps").performClick()
         composeRule.onNodeWithText("All Installed Apps").assertIsDisplayed()
     }

@@ -5,6 +5,7 @@ import android.app.Application
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.twinspace.app.data.AppDiscoveryResult
 import com.twinspace.app.data.InstalledAppsRepository
 import com.twinspace.app.data.TwinSpacePreferences
 import com.twinspace.app.engine.DeviceCompatibilityInspector
@@ -24,12 +25,19 @@ import kotlinx.coroutines.launch
 enum class SelectionSlot {
     FIRST,
     SECOND,
-    BROWSE_ONLY
+    BROWSE_ONLY;
+
+    companion object {
+        fun fromRouteArg(value: String?): SelectionSlot {
+            return entries.firstOrNull { it.name == value } ?: FIRST
+        }
+    }
 }
 
 data class TwinSpaceUiState(
     val isLoadingApps: Boolean = true,
     val allApps: List<InstalledApp> = emptyList(),
+    val appsLoadError: String? = null,
     val recentApps: List<InstalledApp> = emptyList(),
     val searchQuery: String = "",
     val firstApp: InstalledApp? = null,
@@ -54,6 +62,7 @@ class TwinSpaceViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _apps = MutableStateFlow<List<InstalledApp>>(emptyList())
     private val _isLoading = MutableStateFlow(true)
+    private val _appsLoadError = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
     private val _firstApp = MutableStateFlow<InstalledApp?>(null)
     private val _secondApp = MutableStateFlow<InstalledApp?>(null)
@@ -69,6 +78,7 @@ class TwinSpaceViewModel(application: Application) : AndroidViewModel(applicatio
     val uiState: StateFlow<TwinSpaceUiState> = combine(
         _isLoading,
         _apps,
+        _appsLoadError,
         _recentPackageNames,
         _searchQuery,
         _firstApp,
@@ -82,15 +92,16 @@ class TwinSpaceViewModel(application: Application) : AndroidViewModel(applicatio
         val isLoading = values[0] as Boolean
         @Suppress("UNCHECKED_CAST")
         val allApps = values[1] as List<InstalledApp>
+        val appsLoadError = values[2] as String?
         @Suppress("UNCHECKED_CAST")
-        val recentPkgs = values[2] as List<String>
-        val query = values[3] as String
-        val first = values[4] as InstalledApp?
-        val second = values[5] as InstalledApp?
-        val settings = values[6] as TwinSpaceSettings
-        val compatibility = values[7] as DeviceCompatibility?
-        val launchResult = values[8] as LaunchResult?
-        val banner = values[9] as String?
+        val recentPkgs = values[3] as List<String>
+        val query = values[4] as String
+        val first = values[5] as InstalledApp?
+        val second = values[6] as InstalledApp?
+        val settings = values[7] as TwinSpaceSettings
+        val compatibility = values[8] as DeviceCompatibility?
+        val launchResult = values[9] as LaunchResult?
+        val banner = values[10] as String?
 
         val recentModels = recentPkgs.mapNotNull { pkg ->
             allApps.firstOrNull { it.packageName == pkg }
@@ -99,6 +110,7 @@ class TwinSpaceViewModel(application: Application) : AndroidViewModel(applicatio
         TwinSpaceUiState(
             isLoadingApps = isLoading,
             allApps = allApps,
+            appsLoadError = appsLoadError,
             recentApps = recentModels,
             searchQuery = query,
             firstApp = first,
@@ -121,8 +133,21 @@ class TwinSpaceViewModel(application: Application) : AndroidViewModel(applicatio
     fun refreshInstalledApps() {
         viewModelScope.launch {
             _isLoading.value = true
-            val discovered = appsRepository.loadLaunchableApps()
-            _apps.value = discovered
+            _appsLoadError.value = null
+            when (val result = appsRepository.loadLaunchableApps()) {
+                is AppDiscoveryResult.Success -> {
+                    _apps.value = result.apps
+                    _appsLoadError.value = null
+                }
+                is AppDiscoveryResult.Empty -> {
+                    _apps.value = emptyList()
+                    _appsLoadError.value = result.message
+                }
+                is AppDiscoveryResult.Failure -> {
+                    _apps.value = emptyList()
+                    _appsLoadError.value = result.message
+                }
+            }
             _isLoading.value = false
         }
     }
@@ -170,7 +195,6 @@ class TwinSpaceViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             SelectionSlot.BROWSE_ONLY -> {
-                // Assign to next open slot automatically
                 if (_firstApp.value == null) {
                     _firstApp.value = app
                 } else if (_secondApp.value == null) {

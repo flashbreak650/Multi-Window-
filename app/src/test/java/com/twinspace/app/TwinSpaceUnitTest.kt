@@ -1,12 +1,14 @@
 package com.twinspace.app
 
 import android.content.pm.ActivityInfo
+import com.twinspace.app.data.AppDiscoveryResult
 import com.twinspace.app.data.InstalledAppsRepository
 import com.twinspace.app.data.TwinSpacePreferences
 import com.twinspace.app.engine.DeviceCompatibilityInspector
 import com.twinspace.app.engine.MultiWindowLauncher
 import com.twinspace.app.model.InstalledApp
 import com.twinspace.app.model.TwinSpaceSettings
+import com.twinspace.app.ui.SelectionSlot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -38,6 +40,23 @@ class TwinSpaceUnitTest {
         val byPackage = InstalledAppsRepository.filterApps(sampleApps, "youtube")
         assertEquals(1, byPackage.size)
         assertEquals("YouTube", byPackage.first().label)
+    }
+
+    @Test
+    fun selectionSlot_parsesNavigationRouteArgsSafely() {
+        assertEquals(SelectionSlot.FIRST, SelectionSlot.fromRouteArg("FIRST"))
+        assertEquals(SelectionSlot.SECOND, SelectionSlot.fromRouteArg("SECOND"))
+        assertEquals(SelectionSlot.BROWSE_ONLY, SelectionSlot.fromRouteArg("BROWSE_ONLY"))
+        assertEquals(SelectionSlot.FIRST, SelectionSlot.fromRouteArg(null))
+        assertEquals(SelectionSlot.FIRST, SelectionSlot.fromRouteArg("UNKNOWN"))
+    }
+
+    @Test
+    fun appDiscoveryResult_representsEmptyAndFailureMessages() {
+        val empty = AppDiscoveryResult.Empty("No launchable apps found.")
+        val failure = AppDiscoveryResult.Failure("Permission denied.")
+        assertEquals("No launchable apps found.", empty.message)
+        assertEquals("Permission denied.", failure.message)
     }
 
     @Test

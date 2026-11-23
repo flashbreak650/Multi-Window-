@@ -1,10 +1,9 @@
 package com.twinspace.app.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Security
@@ -28,12 +27,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -52,13 +49,11 @@ import androidx.compose.ui.unit.dp
 import com.twinspace.app.model.InstalledApp
 import com.twinspace.app.model.LaunchResult
 import com.twinspace.app.ui.theme.TwinBlue
-import com.twinspace.app.ui.theme.TwinBlueSoft
 import com.twinspace.app.ui.theme.TwinError
 import com.twinspace.app.ui.theme.TwinOutline
 import com.twinspace.app.ui.theme.TwinSuccess
 import com.twinspace.app.ui.theme.TwinSurfaceVariant
 import com.twinspace.app.ui.theme.TwinViolet
-import com.twinspace.app.ui.theme.TwinVioletSoft
 import com.twinspace.app.ui.theme.TwinWarning
 
 @Composable
@@ -148,17 +143,14 @@ fun SelectedAppSlotCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(
-                width = 1.dp,
-                color = if (selectedApp != null) accentColor.copy(alpha = 0.35f) else TwinOutline,
-                shape = RoundedCornerShape(20.dp)
-            )
-            .clickable(onClick = onClick),
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selectedApp != null) accentColor.copy(alpha = 0.35f) else TwinOutline
+        )
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -214,6 +206,14 @@ fun SelectedAppSlotCard(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = "Open $slotTitle list",
+                tint = accentColor
+            )
         }
     }
 }

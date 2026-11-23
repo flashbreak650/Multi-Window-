@@ -6,8 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,14 +13,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.twinspace.app.ui.SelectionSlot
 import com.twinspace.app.ui.TwinSpaceViewModel
 import com.twinspace.app.ui.components.LaunchOutcomeDialog
@@ -36,10 +33,12 @@ import com.twinspace.app.ui.theme.TwinSpaceTheme
 
 private object Routes {
     const val DASHBOARD = "dashboard"
-    const val PICKER = "picker"
+    const val PICKER_PATTERN = "picker/{slot}"
     const val COMPATIBILITY = "compatibility"
     const val SETTINGS = "settings"
     const val HELP = "help"
+
+    fun picker(slot: SelectionSlot): String = "picker/${slot.name}"
 }
 
 class MainActivity : ComponentActivity() {
@@ -82,7 +81,6 @@ private fun TwinSpaceRoot(
     val navController = rememberNavController()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val iconMap by viewModel.iconMap.collectAsStateWithLifecycle()
-    var activeSlot by remember { mutableStateOf(SelectionSlot.FIRST) }
 
     LaunchedEffect(Unit) {
         viewModel.refreshCompatibility(activity)
@@ -116,40 +114,64 @@ private fun TwinSpaceRoot(
                 iconMap = iconMap,
                 onRequestIcon = { viewModel.ensureIconLoaded(it) },
                 onSelectSlot = { slot ->
-                    activeSlot = slot
                     viewModel.dismissBanner()
-                    navController.navigate(Routes.PICKER)
+                    viewModel.onSearchQueryChanged("")
+                    if (uiState.allApps.isEmpty() && !uiState.isLoadingApps) {
+                        viewModel.refreshInstalledApps()
+                    }
+                    navController.navigate(Routes.picker(slot)) {
+                        launchSingleTop = true
+                    }
                 },
                 onSwapApps = { viewModel.swapApps() },
                 onClearSelection = { viewModel.clearSelection() },
                 onOpenBoth = { viewModel.openBoth(activity = activity) },
                 onOpenAllApps = {
-                    activeSlot = SelectionSlot.BROWSE_ONLY
                     viewModel.dismissBanner()
-                    navController.navigate(Routes.PICKER)
+                    viewModel.onSearchQueryChanged("")
+                    if (uiState.allApps.isEmpty() && !uiState.isLoadingApps) {
+                        viewModel.refreshInstalledApps()
+                    }
+                    navController.navigate(Routes.picker(SelectionSlot.BROWSE_ONLY)) {
+                        launchSingleTop = true
+                    }
                 },
                 onOpenRecentApp = { app ->
                     viewModel.selectApp(app, SelectionSlot.BROWSE_ONLY)
                 },
                 onOpenCompatibility = {
                     viewModel.refreshCompatibility(activity)
-                    navController.navigate(Routes.COMPATIBILITY)
+                    navController.navigate(Routes.COMPATIBILITY) {
+                        launchSingleTop = true
+                    }
                 },
-                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                onOpenHelp = { navController.navigate(Routes.HELP) }
+                onOpenSettings = {
+                    navController.navigate(Routes.SETTINGS) {
+                        launchSingleTop = true
+                    }
+                },
+                onOpenHelp = {
+                    navController.navigate(Routes.HELP) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
-        composable(Routes.PICKER) {
+        composable(
+            route = Routes.PICKER_PATTERN,
+            arguments = listOf(navArgument("slot") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val slot = SelectionSlot.fromRouteArg(backStackEntry.arguments?.getString("slot"))
             AppPickerScreen(
-                slot = activeSlot,
+                slot = slot,
                 uiState = uiState,
                 iconMap = iconMap,
                 onRequestIcon = { viewModel.ensureIconLoaded(it) },
                 onSearchChanged = { viewModel.onSearchQueryChanged(it) },
                 onRefreshApps = { viewModel.refreshInstalledApps() },
                 onAppPicked = { app ->
-                    val accepted = viewModel.selectApp(app, activeSlot)
+                    val accepted = viewModel.selectApp(app, slot)
                     if (accepted) {
                         viewModel.onSearchQueryChanged("")
                         navController.popBackStack()

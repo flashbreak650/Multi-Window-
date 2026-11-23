@@ -1,4 +1,4 @@
-name: Build TwinSpace APK & Publish Release
+name: Build TwinSpace v1.0.1 APK & Publish Release
 
 on:
   push:
@@ -26,17 +26,17 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Initialize Gradle Wrapper & Build APKs
+      - name: Initialize Gradle Wrapper, Run Tests & Build APKs
         run: |
           gradle wrapper --gradle-version 8.9
           chmod +x gradlew
-          ./gradlew testDebugUnitTest assembleDebug assembleRelease --stacktrace
+          ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleRelease --stacktrace
 
       - name: Package & Sign APKs for Release
         run: |
           mkdir -p release-assets
-          cp app/build/outputs/apk/debug/app-debug.apk release-assets/TwinSpace-v1.0.0-debug.apk
-          cp app/build/outputs/apk/release/app-release-unsigned.apk release-assets/TwinSpace-v1.0.0-release-unsigned.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release-assets/TwinSpace-v1.0.1-debug.apk
+          cp app/build/outputs/apk/release/app-release-unsigned.apk release-assets/TwinSpace-v1.0.1-release-unsigned.apk
 
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
           keytool -genkeypair -v \
@@ -56,35 +56,39 @@ jobs:
             --ks-pass pass:twinspace-ci-pass \
             --key-pass pass:twinspace-ci-pass \
             --ks-key-alias twinspace \
-            --out release-assets/TwinSpace-v1.0.0-release.apk \
+            --out release-assets/TwinSpace-v1.0.1-release.apk \
             /tmp/app-release-aligned.apk
 
-          "$BUILD_TOOLS/apksigner" verify release-assets/TwinSpace-v1.0.0-release.apk
+          "$BUILD_TOOLS/apksigner" verify release-assets/TwinSpace-v1.0.1-release.apk
           ls -lh release-assets/
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: twinspace-apks
+          name: twinspace-v1.0.1-apks
           path: release-assets/*.apk
 
-      - name: Publish GitHub Release
+      - name: Publish GitHub Release TwinSpace v1.0.1
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0-${{ github.run_number }}
-          name: TwinSpace v1.0.0 (Build #${{ github.run_number }})
+          tag_name: v1.0.1
+          name: TwinSpace v1.0.1
           generate_release_notes: true
           body: |
-            ## TwinSpace – Multi Window Manager (Native Kotlin & Jetpack Compose)
+            ## TwinSpace v1.0.1 – First/Second App Selection & Discovery Fix
+
+            ### Fixes in v1.0.1
+            - Replaced modifier-chained clickable surfaces with Material 3 native clickable `Surface(onClick = ...)` cards for First App, Second App, Recent Apps, and App Picker rows.
+            - Switched `MainActivity` picker navigation to deterministic parameterized route `picker/{slot}` with `launchSingleTop = true`.
+            - Added `Scaffold` system bar insets to `DashboardScreen` for Android 15 edge-to-edge compatibility.
+            - Hardened `InstalledAppsRepository` with per-app label error protection, fallback PackageManager query flags, and explicit empty/error states with a Retry button.
+            - Added R8 keep rules for `TwinSpaceViewModel` and `SelectionSlot`.
 
             ### Downloadable APKs
-            - **TwinSpace-v1.0.0-release.apk** — R8-minified, aligned, and signed APK ready to install on Android 8.0+ (API 26–35).
-            - **TwinSpace-v1.0.0-debug.apk** — Debug APK for testing and ADB inspection.
-            - **TwinSpace-v1.0.0-release-unsigned.apk** — Unsigned R8 release build for signing with your own private Play Store keystore.
-
-            ### Included Verification
-            - `./gradlew testDebugUnitTest` passed prior to packaging.
+            - **TwinSpace-v1.0.1-release.apk** — R8-minified, aligned, and signed APK ready to install on Android 8.0+ (API 26–35).
+            - **TwinSpace-v1.0.1-debug.apk** — Debug APK.
+            - **TwinSpace-v1.0.1-release-unsigned.apk** — Unsigned R8 release build.
           files: |
-            release-assets/TwinSpace-v1.0.0-release.apk
-            release-assets/TwinSpace-v1.0.0-debug.apk
-            release-assets/TwinSpace-v1.0.0-release-unsigned.apk
+            release-assets/TwinSpace-v1.0.1-release.apk
+            release-assets/TwinSpace-v1.0.1-debug.apk
+            release-assets/TwinSpace-v1.0.1-release-unsigned.apk

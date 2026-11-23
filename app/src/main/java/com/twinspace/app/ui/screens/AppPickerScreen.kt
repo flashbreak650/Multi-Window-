@@ -1,8 +1,7 @@
 package com.twinspace.app.ui.screens
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,8 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,7 +42,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,6 +52,7 @@ import com.twinspace.app.ui.TwinSpaceUiState
 import com.twinspace.app.ui.components.RealAppIcon
 import com.twinspace.app.ui.theme.TwinBlue
 import com.twinspace.app.ui.theme.TwinBlueSoft
+import com.twinspace.app.ui.theme.TwinError
 import com.twinspace.app.ui.theme.TwinOutline
 import com.twinspace.app.ui.theme.TwinViolet
 import com.twinspace.app.ui.theme.TwinVioletSoft
@@ -162,6 +164,45 @@ fun AppPickerScreen(
                         )
                     }
                 }
+            } else if (uiState.appsLoadError != null && uiState.allApps.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, TwinOutline, RoundedCornerShape(20.dp)),
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ErrorOutline,
+                                contentDescription = null,
+                                tint = TwinError,
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Text(
+                                text = "Unable to Load Installed Apps",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = uiState.appsLoadError,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Button(
+                                onClick = onRefreshApps,
+                                colors = ButtonDefaults.buttonColors(containerColor = TwinBlue)
+                            ) {
+                                Text("Retry App Discovery")
+                            }
+                        }
+                    }
+                }
             } else {
                 val filtered = uiState.filteredApps
                 LazyColumn(
@@ -180,12 +221,10 @@ fun AppPickerScreen(
                                     items(uiState.recentApps, key = { "recent_${it.packageName}/${it.activityName}" }) { app ->
                                         val key = "${app.packageName}/${app.activityName}"
                                         Surface(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .border(1.dp, TwinOutline, RoundedCornerShape(16.dp))
-                                                .clickable { onAppPicked(app) },
+                                            onClick = { onAppPicked(app) },
                                             color = MaterialTheme.colorScheme.surface,
-                                            shape = RoundedCornerShape(16.dp)
+                                            shape = RoundedCornerShape(16.dp),
+                                            border = BorderStroke(1.dp, TwinOutline)
                                         ) {
                                             Row(
                                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -231,7 +270,11 @@ fun AppPickerScreen(
                                 shape = RoundedCornerShape(18.dp)
                             ) {
                                 Text(
-                                    text = "No installed apps matched '${uiState.searchQuery}'.",
+                                    text = if (uiState.searchQuery.isBlank()) {
+                                        "No installed apps available."
+                                    } else {
+                                        "No installed apps matched '${uiState.searchQuery}'."
+                                    },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(20.dp)
@@ -247,21 +290,18 @@ fun AppPickerScreen(
                                 uiState.secondApp?.activityName == app.activityName
 
                             Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .border(
-                                        width = 1.dp,
-                                        color = when {
-                                            isFirst -> TwinBlue
-                                            isSecond -> TwinViolet
-                                            else -> TwinOutline
-                                        },
-                                        shape = RoundedCornerShape(18.dp)
-                                    )
-                                    .clickable { onAppPicked(app) },
+                                onClick = { onAppPicked(app) },
+                                modifier = Modifier.fillMaxWidth(),
                                 color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(18.dp)
+                                shape = RoundedCornerShape(18.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = when {
+                                        isFirst -> TwinBlue
+                                        isSecond -> TwinViolet
+                                        else -> TwinOutline
+                                    }
+                                )
                             ) {
                                 Row(
                                     modifier = Modifier.padding(14.dp),
